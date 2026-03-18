@@ -1,11 +1,13 @@
 .vscode/**
 .vscode-test/**
-src/**/*.ts
-src/providers/**
+.worktrees/**
+src/**
 scripts/**
 node_modules/**
 .gitignore
 tsconfig.json
+pnpm-lock.yaml
+*.vsix
 **/*.map
 **/*.ts
 !out/**
