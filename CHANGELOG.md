@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Fix typo in README
+
 ## 0.1.2
 
 - Improved README: updated code snippets and added a more comprehensive usage example
