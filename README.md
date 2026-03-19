@@ -10,15 +10,15 @@ Type `wa-` inside any `class` or `className` attribute to get completions with C
 
 ```html
 <div class="wa-stack wa-gap-m">
-  <wa-card class="wa-padding-l wa-surface-raised">
-    <h2 class="wa-text-xl wa-font-semibold">Dashboard</h2>
+  <wa-card class="wa-border-radius-m wa-neutral">
+    <h2 class="wa-heading-xl wa-font-weight-semibold">Dashboard</h2>
   </wa-card>
 </div>
 ```
 
 ```tsx
-<WaCard className="wa-padding-l wa-surface-raised">
-  <p className="wa-text-s wa-color-neutral">No results found.</p>
+<WaCard className="wa-border-radius-m wa-neutral">
+  <p className="wa-body-s wa-color-text-quiet">No results found.</p>
 </WaCard>
 ```
 
