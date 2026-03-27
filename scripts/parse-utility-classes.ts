@@ -47,6 +47,7 @@ const descriptions: Record<string, string> = {
   'wa-gap-2xl': 'Extra-extra-large gap (40px)',
   'wa-gap-3xl': 'Triple-extra-large gap (48px)',
   'wa-gap-4xl': 'Quadruple-extra-large gap (64px)',
+  'wa-gap-5xl': 'Quintuple-extra-large gap (80px)',
 
   // Alignment
   'wa-align-items-start': 'Align items to flex-start',
@@ -78,6 +79,14 @@ const descriptions: Record<string, string> = {
   'wa-heading': 'Heading text style',
   'wa-caption': 'Caption text style (quiet color)',
   'wa-longform': 'Long-form text style (serif)',
+  'wa-body-3xs': 'Body text style at 3xs size',
+  'wa-body-5xl': 'Body text style at 5xl size',
+  'wa-heading-3xs': 'Heading text style at 3xs size',
+  'wa-heading-5xl': 'Heading text style at 5xl size',
+  'wa-caption-3xs': 'Caption text style at 3xs size',
+  'wa-caption-5xl': 'Caption text style at 5xl size',
+  'wa-longform-3xs': 'Longform text style at 3xs size',
+  'wa-longform-5xl': 'Longform text style at 5xl size',
   'wa-text-truncate': 'Truncate text with ellipsis',
   'wa-link': 'Styled link with hover effect',
   'wa-link-plain': 'Plain link without decoration',
@@ -92,7 +101,9 @@ const descriptions: Record<string, string> = {
   'wa-font-size-xl': 'Font size: extra-large (25px)',
   'wa-font-size-2xl': 'Font size: 2x-large (32px)',
   'wa-font-size-3xl': 'Font size: 3x-large (41px)',
+  'wa-font-size-3xs': 'Font size: triple-extra-small (10px)',
   'wa-font-size-4xl': 'Font size: 4x-large (52px)',
+  'wa-font-size-5xl': 'Font size: 5x-large (66px)',
 
   // Font weight
   'wa-font-weight-light': 'Font weight: light (300)',

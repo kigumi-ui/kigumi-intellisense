@@ -6,7 +6,7 @@
   "website": "https://kigumi.style",
   "publisher": "kigumi",
   "icon": "images/icon.png",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "license": "MIT",
   "repository": "https://github.com/kigumi-ui/kigumi-intellisense",
   "issues": "https://github.com/kigumi-ui/kigumi-intellisense/issues",
@@ -68,7 +68,8 @@
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.0.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.2"
   },
   "packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc"
 }

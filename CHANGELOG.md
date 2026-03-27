@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Update data catalogs for Web Awesome 3.4.0
+- Add new spacing utility: `wa-gap-5xl`
+- Add new typography scale: `wa-font-size-3xs` (10px), `wa-font-size-5xl` (66px)
+- Add extended text utilities: body, heading, caption, longform at 3xs/5xl sizes
+
 ## 0.1.3
 
 - Fix typo in README
