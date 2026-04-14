@@ -7,14 +7,26 @@ import { TokenHoverProvider } from './providers/token-hover';
 
 const MARKUP_LANGUAGES = [
   'html',
-  'typescriptreact',
-  'javascriptreact',
-  'typescript',
-  'javascript',
-  'vue',
+  'typescriptreact',   // React / Next.js / Gatsby / Remix (.tsx)
+  'javascriptreact',   // React / Next.js / Gatsby / Remix (.jsx)
+  'typescript',        // Angular templates, Lit, CSS-in-JS (styled-components, emotion, Linaria)
+  'javascript',        // plain JS with template literals / CSS-in-JS
+  'vue',               // Vue SFC
+  'svelte',            // Svelte SFC
+  'astro',             // Astro SFC
+  'mdx',               // MDX with JSX
 ];
 
-const STYLE_LANGUAGES = ['css', 'scss', 'less'];
+const STYLE_LANGUAGES = [
+  'css',      // also matches *.module.css (CSS Modules share the css language ID)
+  'scss',     // also matches *.module.scss
+  'sass',     // indented-syntax SCSS
+  'less',     // also matches *.module.less
+  'postcss',
+  'stylus',
+];
+
+const ALL_LANGUAGES = [...MARKUP_LANGUAGES, ...STYLE_LANGUAGES];
 
 export function activate(context: vscode.ExtensionContext) {
   const output = vscode.window.createOutputChannel('Kigumi IntelliSense');
@@ -45,43 +57,33 @@ export function activate(context: vscode.ExtensionContext) {
 
   const classAttributes = config.get<string[]>('classAttributes', ['class', 'className']);
 
-  // Class name completions in markup files
+  // Register class + token providers for EVERY supported language.
+  // Context detectors (detectClassContext / detectTokenContext) gate each
+  // provider to its valid surface: classes only fire inside class="" /
+  // className={} / framework directive attributes; tokens only fire inside
+  // var(--wa-...) or bare --wa-... declarations. The two surfaces are
+  // mutually exclusive, so registering both for all languages is safe.
   const classCompletion = new ClassCompletionProvider(catalog, classAttributes);
-  for (const lang of MARKUP_LANGUAGES) {
-    context.subscriptions.push(
-      vscode.languages.registerCompletionItemProvider(
-        { language: lang, scheme: 'file' },
-        classCompletion,
-        '-', '"', "'", ' ' // Trigger on hyphen, quotes (attr open), space (next class)
-      )
-    );
-  }
-
-  // Class name hover in markup files
   const classHover = new ClassHoverProvider(catalog, classAttributes);
-  for (const lang of MARKUP_LANGUAGES) {
-    context.subscriptions.push(
-      vscode.languages.registerHoverProvider({ language: lang, scheme: 'file' }, classHover)
-    );
-  }
-
-  // CSS token completions in style files
   const tokenCompletion = new TokenCompletionProvider(catalog);
-  for (const lang of STYLE_LANGUAGES) {
+  const tokenHover = new TokenHoverProvider(catalog);
+
+  for (const lang of ALL_LANGUAGES) {
+    const selector: vscode.DocumentSelector = { language: lang, scheme: 'file' };
+
     context.subscriptions.push(
       vscode.languages.registerCompletionItemProvider(
-        { language: lang, scheme: 'file' },
+        selector,
+        classCompletion,
+        '-', '"', "'", ' ' // hyphen, quotes (attr open), space (next class)
+      ),
+      vscode.languages.registerHoverProvider(selector, classHover),
+      vscode.languages.registerCompletionItemProvider(
+        selector,
         tokenCompletion,
-        '-' // Trigger on hyphen for --wa- prefix
-      )
-    );
-  }
-
-  // CSS token hover in style files
-  const tokenHover = new TokenHoverProvider(catalog);
-  for (const lang of STYLE_LANGUAGES) {
-    context.subscriptions.push(
-      vscode.languages.registerHoverProvider({ language: lang, scheme: 'file' }, tokenHover)
+        '-' // trigger on hyphen for --wa- prefix
+      ),
+      vscode.languages.registerHoverProvider(selector, tokenHover)
     );
   }
 

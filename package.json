@@ -1,12 +1,12 @@
 {
   "name": "kigumi-intellisense",
   "displayName": "Kigumi IntelliSense",
-  "description": "CSS class name and custom property IntelliSense for Web Awesome",
-  "Author": "Michael Suzuki",
+  "description": "CSS class name and custom property IntelliSense for Kigumi projects.",
+  "Author": "Michael Suzuki<kigumi@mischa.dev>",
   "website": "https://kigumi.style",
   "publisher": "kigumi",
   "icon": "images/icon.png",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "license": "MIT",
   "repository": "https://github.com/kigumi-ui/kigumi-intellisense",
   "issues": "https://github.com/kigumi-ui/kigumi-intellisense/issues",
@@ -20,7 +20,8 @@
     "kigumi",
     "webawesome",
     "intellisense",
-    "autocomplete"
+    "autocomplete",
+    "css"
   ],
   "activationEvents": [
     "onLanguage:html",
@@ -29,9 +30,15 @@
     "onLanguage:typescript",
     "onLanguage:javascript",
     "onLanguage:vue",
+    "onLanguage:svelte",
+    "onLanguage:astro",
+    "onLanguage:mdx",
     "onLanguage:css",
     "onLanguage:scss",
-    "onLanguage:less"
+    "onLanguage:sass",
+    "onLanguage:less",
+    "onLanguage:postcss",
+    "onLanguage:stylus"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -42,9 +49,14 @@
           "type": "array",
           "default": [
             "class",
-            "className"
+            "className",
+            ":class",
+            "v-bind:class",
+            "[class]",
+            "[ngClass]",
+            "class:list"
           ],
-          "description": "Attribute names to provide class completions for"
+          "description": "Attribute names to provide class completions for. Covers React (className), Vue (:class, v-bind:class), Angular ([class], [ngClass]), Astro (class:list)."
         },
         "kigumi.enable": {
           "type": "boolean",

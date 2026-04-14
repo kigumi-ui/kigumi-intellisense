@@ -41,21 +41,55 @@ describe('detectClassContext', () => {
       expect(detectClassContext(doc, new Position(0, 22), defaultAttrs)).toBe('wa-fl');
     });
 
-    it('detects multi-line class attribute (context detected, prefix lost to join space)', () => {
-      // The multi-line strategy joins lines with ' ', so a trailing space
-      // causes lastIndexOf(' ') to return the join space, yielding ''.
-      // This correctly detects being inside a class attr (non-null), but
-      // the partial prefix is lost. Still useful: completion triggers with all items.
+    it('detects multi-line class attribute and extracts current prefix', () => {
+      // Multi-line fallback joins earlier lines with ' ' and matches the full
+      // class value across lines. The partial prefix after the last space on
+      // the cursor line is returned for filtering.
       const doc = createMockDocument([
         '<div className="',
         '  wa-fl',
       ]);
-      expect(detectClassContext(doc, new Position(1, 7), defaultAttrs)).toBe('');
+      expect(detectClassContext(doc, new Position(1, 7), defaultAttrs)).toBe('wa-fl');
     });
 
     it('supports custom classAttributes', () => {
       const doc = createMockDocument(['<div classList="wa-">']);
       expect(detectClassContext(doc, new Position(0, 19), ['classList'])).toBe('wa-');
+    });
+
+    it('detects Vue :class directive', () => {
+      const doc = createMockDocument(['<div :class="wa-fl">']);
+      expect(
+        detectClassContext(doc, new Position(0, 18), [':class'])
+      ).toBe('wa-fl');
+    });
+
+    it('detects Vue v-bind:class directive', () => {
+      const doc = createMockDocument(['<div v-bind:class="wa-fl">']);
+      expect(
+        detectClassContext(doc, new Position(0, 24), ['v-bind:class'])
+      ).toBe('wa-fl');
+    });
+
+    it('detects Angular [class] property binding', () => {
+      const doc = createMockDocument(['<div [class]="wa-fl">']);
+      expect(
+        detectClassContext(doc, new Position(0, 19), ['[class]'])
+      ).toBe('wa-fl');
+    });
+
+    it('detects Angular [ngClass] directive', () => {
+      const doc = createMockDocument(['<div [ngClass]="wa-fl">']);
+      expect(
+        detectClassContext(doc, new Position(0, 21), ['[ngClass]'])
+      ).toBe('wa-fl');
+    });
+
+    it('detects Astro class:list directive', () => {
+      const doc = createMockDocument(['<div class:list="wa-fl">']);
+      expect(
+        detectClassContext(doc, new Position(0, 22), ['class:list'])
+      ).toBe('wa-fl');
     });
   });
 
@@ -156,20 +190,122 @@ describe('detectClassAtCursor', () => {
 // detectTokenContext
 // ---------------------------------------------------------------------------
 describe('detectTokenContext', () => {
-  describe('positive cases', () => {
+  describe('positive cases inside var(...)', () => {
     it('detects var(--wa-...) partial', () => {
       const doc = createMockDocument(['color: var(--wa-color-bl);']);
-      expect(detectTokenContext(doc, new Position(0, 24))).toBe('--wa-color-bl');
+      expect(detectTokenContext(doc, new Position(0, 24))).toEqual({
+        prefix: '--wa-color-bl',
+        wrapInVar: false,
+      });
+    });
+
+    it('detects empty prefix right after var(', () => {
+      // cursor between ( and ) in `var()`
+      const doc = createMockDocument(['color: var();']);
+      expect(detectTokenContext(doc, new Position(0, 11))).toEqual({
+        prefix: '',
+        wrapInVar: false,
+      });
+    });
+
+    it('detects single-dash prefix inside var(-', () => {
+      const doc = createMockDocument(['color: var(-);']);
+      expect(detectTokenContext(doc, new Position(0, 12))).toEqual({
+        prefix: '-',
+        wrapInVar: false,
+      });
+    });
+
+    it('detects --wa prefix without trailing hyphen inside var(', () => {
+      const doc = createMockDocument(['color: var(--wa);']);
+      expect(detectTokenContext(doc, new Position(0, 15))).toEqual({
+        prefix: '--wa',
+        wrapInVar: false,
+      });
     });
 
     it('detects var( --wa-) with space after paren', () => {
       const doc = createMockDocument(['color: var( --wa-);']);
-      expect(detectTokenContext(doc, new Position(0, 17))).toBe('--wa-');
+      expect(detectTokenContext(doc, new Position(0, 17))).toEqual({
+        prefix: '--wa-',
+        wrapInVar: false,
+      });
     });
 
-    it('detects bare --wa- after colon', () => {
+    it('detects inside JSX inline style with var() prefix', () => {
+      const doc = createMockDocument([
+        "<div style={{ color: 'var(--wa-color-br' }} />",
+      ]);
+      expect(detectTokenContext(doc, new Position(0, 39))).toEqual({
+        prefix: '--wa-color-br',
+        wrapInVar: false,
+      });
+    });
+
+    it('detects inside JSX inline style double-quoted with var() prefix', () => {
+      const doc = createMockDocument([
+        'style={{ color: "var(--wa-space-" }}',
+      ]);
+      expect(detectTokenContext(doc, new Position(0, 32))).toEqual({
+        prefix: '--wa-space-',
+        wrapInVar: false,
+      });
+    });
+
+    it('detects inside CSS-in-JS tagged template literal', () => {
+      const doc = createMockDocument([
+        'styled.div`color: var(--wa-color-brand-`',
+      ]);
+      expect(detectTokenContext(doc, new Position(0, 39))).toEqual({
+        prefix: '--wa-color-brand-',
+        wrapInVar: false,
+      });
+    });
+  });
+
+  describe('positive cases that need var() wrapping', () => {
+    it('detects empty string inside JSX inline style object', () => {
+      // style={{ border: '|' }} — cursor inside empty quotes
+      const doc = createMockDocument(["<div style={{ border: '' }} />"]);
+      expect(detectTokenContext(doc, new Position(0, 23))).toEqual({
+        prefix: '',
+        wrapInVar: true,
+      });
+    });
+
+    it('detects --wa prefix inside JSX inline style without var()', () => {
+      const doc = createMockDocument(["<div style={{ border: '--wa' }} />"]);
+      expect(detectTokenContext(doc, new Position(0, 27))).toEqual({
+        prefix: '--wa',
+        wrapInVar: true,
+      });
+    });
+
+    it('detects inside Vue :style bound object string', () => {
+      // <div :style="{ color: 'x|' }">
+      const doc = createMockDocument([
+        "<div :style=\"{ color: '--wa-' }\">",
+      ]);
+      expect(detectTokenContext(doc, new Position(0, 28))).toEqual({
+        prefix: '--wa-',
+        wrapInVar: true,
+      });
+    });
+
+    it('detects bare --wa- after colon in CSS', () => {
       const doc = createMockDocument([': --wa-spacing-;']);
-      expect(detectTokenContext(doc, new Position(0, 15))).toBe('--wa-spacing-');
+      expect(detectTokenContext(doc, new Position(0, 15))).toEqual({
+        prefix: '--wa-spacing-',
+        wrapInVar: true,
+      });
+    });
+
+    it('detects bare --wa- in HTML style attribute', () => {
+      const doc = createMockDocument(['<div style="color: --wa-">']);
+      expect(detectTokenContext(doc, new Position(0, 24))).toEqual({
+        prefix: '--wa-',
+        wrapInVar: true,
+      });
     });
   });
 
@@ -177,11 +313,6 @@ describe('detectTokenContext', () => {
     it('rejects non-wa custom property', () => {
       const doc = createMockDocument(['color: var(--my-custom);']);
       expect(detectTokenContext(doc, new Position(0, 22))).toBeNull();
-    });
-
-    it('rejects --wa without trailing hyphen', () => {
-      const doc = createMockDocument(['color: var(--wa);']);
-      expect(detectTokenContext(doc, new Position(0, 15))).toBeNull();
     });
 
     it('rejects plain CSS value', () => {
@@ -192,6 +323,12 @@ describe('detectTokenContext', () => {
     it('rejects color keyword', () => {
       const doc = createMockDocument(['border: 1px solid blue;']);
       expect(detectTokenContext(doc, new Position(0, 22))).toBeNull();
+    });
+
+    it('rejects non-wa content in JSX inline style', () => {
+      const doc = createMockDocument(["<div style={{ border: '1px solid red' }} />"]);
+      // cursor after "red"
+      expect(detectTokenContext(doc, new Position(0, 36))).toBeNull();
     });
 
     it('rejects empty line', () => {

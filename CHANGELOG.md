@@ -1,8 +1,25 @@
 # Changelog
 
+## 0.1.6
+
+### Added
+
+- Token completion now fires inside React/JSX/TSX inline-style objects (`style={{ border: '' }}`) and auto-wraps the selected token in `var(...)`
+- Token completion in Vue `:style="{ ... }"` bound object bindings
+- Token completion in HTML `style="..."` attributes and CSS-in-JS tagged templates
+- Support for Svelte, Astro, and MDX files
+- Support for Sass, PostCSS, and Stylus style languages
+- Default `kigumi.classAttributes` now covers Vue (`:class`, `v-bind:class`), Angular (`[class]`, `[ngClass]`), and Astro (`class:list`) out of the box
+
+### Fixed
+
+- Token suggestions now appear immediately after `var(` with the cursor between the parentheses (previously required typing `--wa-` first)
+- Token suggestions now appear for partial prefixes like `--wa`, `--w`, `--`, or `-` (previously required the full `--wa-` trigger)
+- Token and class providers are now registered across all supported markup and style languages; a single context detector decides which one fires based on cursor position
+
 ## 0.1.5
 
-- Update data catalogs for Web Awesome 3.4.0
+- Update data catalogs for Web Awesome 3.5.0
 - Add new spacing utility: `wa-gap-5xl`
 - Add new typography scale: `wa-font-size-3xs` (10px), `wa-font-size-5xl` (66px)
 - Add extended text utilities: body, heading, caption, longform at 3xs/5xl sizes

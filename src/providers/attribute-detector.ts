@@ -110,27 +110,84 @@ export function detectClassAtCursor(
 }
 
 /**
- * Detect whether the cursor is inside a var(--wa-...) expression.
+ * Result of a token-context detection.
  *
- * Returns the current partial token name being typed, or null if not in context.
+ * - `prefix`: the partial string the user has typed so far (may be empty
+ *   immediately after `var(` or at the start of an inline-style string).
+ * - `wrapInVar`: whether the completion should wrap the token name in
+ *   `var(...)`. True when the cursor is in a CSS-value context that does
+ *   not yet have a `var(` around it (e.g. JSX inline-style object string,
+ *   bare `--wa-*` after a `:` declaration).
+ */
+export interface TokenContext {
+  prefix: string;
+  wrapInVar: boolean;
+}
+
+/**
+ * Detect whether the cursor is in a CSS-token context and how the
+ * completion should be inserted.
+ *
+ * Returns `null` when no token context is detected.
+ *
+ * Supported contexts:
+ * 1. Inside `var(...)`                           → no wrap
+ * 2. JSX/TSX inline-style object string
+ *    `style={{ prop: 'x|' }}`                    → wrap in var()
+ * 3. Vue `:style` bound object string
+ *    `:style="{ prop: 'x|' }"`                   → wrap in var()
+ * 4. Bare `--wa-*` after a `:` declaration
+ *    (CSS/SCSS/Less properties, HTML `style="..."`) → wrap in var()
  */
 export function detectTokenContext(
   document: vscode.TextDocument,
   position: vscode.Position
-): string | null {
+): TokenContext | null {
   const lineText = document.lineAt(position).text;
   const charPos = position.character;
   const textBeforeCursor = lineText.slice(0, charPos);
 
-  // Look for var( with optional --wa- prefix
-  const match = /var\(\s*(--wa-[a-z0-9-]*)$/.exec(textBeforeCursor);
-  if (match) return match[1];
+  // 1. Inside var(...) — captures any prefix of --wa-* (including empty).
+  //    `[^()]*` stops at nested parens so `var(var(--wa-` still picks the
+  //    innermost var().
+  const varMatch = /var\(\s*([^()]*)$/.exec(textBeforeCursor);
+  if (varMatch && isTokenPrefix(varMatch[1])) {
+    return { prefix: varMatch[1], wrapInVar: false };
+  }
 
-  // Also match bare --wa- in property declarations (e.g. in :root blocks)
-  const bareMatch = /:\s*(--wa-[a-z0-9-]*)$/.exec(textBeforeCursor);
-  if (bareMatch) return bareMatch[1];
+  // 2. JSX/TSX inline-style object string: style={{ prop: 'x|' }}
+  //    Matches any string literal (single/double quote or backtick) inside
+  //    a `style={{ ... }}` expression.
+  const jsxObjectStyleMatch = /style\s*=\s*\{\{[^}]*['"`]([^'"`]*)$/.exec(textBeforeCursor);
+  if (jsxObjectStyleMatch && isTokenPrefix(jsxObjectStyleMatch[1])) {
+    return { prefix: jsxObjectStyleMatch[1], wrapInVar: true };
+  }
+
+  // 3. Vue :style bound object string: :style="{ prop: 'x|' }"
+  const vueObjectStyleMatch = /:style\s*=\s*["']\s*\{[^}]*['"`]([^'"`]*)$/.exec(textBeforeCursor);
+  if (vueObjectStyleMatch && isTokenPrefix(vueObjectStyleMatch[1])) {
+    return { prefix: vueObjectStyleMatch[1], wrapInVar: true };
+  }
+
+  // 4. Bare --wa-* after a `:` declaration. Requires at least one `-` so we
+  //    don't fire after every CSS property colon (e.g. `color: red`).
+  const bareMatch = /:\s*([^;:{}\s"'`)]*)$/.exec(textBeforeCursor);
+  if (bareMatch) {
+    const inner = bareMatch[1];
+    if (inner.length > 0 && inner.startsWith('-') && isTokenPrefix(inner)) {
+      return { prefix: inner, wrapInVar: true };
+    }
+  }
 
   return null;
+}
+
+/**
+ * Whether `s` is a valid prefix for completion — either empty, a proper
+ * prefix of the literal string `--wa-`, or already starts with `--wa-`.
+ */
+function isTokenPrefix(s: string): boolean {
+  return s === '' || '--wa-'.startsWith(s) || s.startsWith('--wa-');
 }
 
 /**

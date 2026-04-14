@@ -9,9 +9,10 @@ export class TokenCompletionProvider implements vscode.CompletionItemProvider {
     document: vscode.TextDocument,
     position: vscode.Position
   ): vscode.CompletionItem[] | null {
-    const prefix = detectTokenContext(document, position);
-    if (prefix === null) return null;
+    const ctx = detectTokenContext(document, position);
+    if (ctx === null) return null;
 
+    const { prefix, wrapInVar } = ctx;
     const entries = this.catalog.filterTokens(prefix);
 
     return entries.map((entry, idx) => {
@@ -35,7 +36,12 @@ export class TokenCompletionProvider implements vscode.CompletionItemProvider {
       // Group by category then group for ordering
       item.sortText = `${entry.group.padEnd(30)}${String(idx).padStart(4, '0')}`;
 
-      // Replace the current partial token name
+      // When the context is outside a var() expression (e.g. inside a JSX
+      // inline-style string or a bare CSS value), insert the token wrapped
+      // in var(...). Inside var(...) we only insert the token name.
+      item.insertText = wrapInVar ? `var(${entry.name})` : entry.name;
+
+      // Replace the partial prefix the user has typed so far.
       if (prefix.length > 0) {
         const startChar = position.character - prefix.length;
         item.range = new vscode.Range(position.line, startChar, position.line, position.character);
