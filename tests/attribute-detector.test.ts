@@ -315,6 +315,21 @@ describe('detectTokenContext', () => {
       expect(detectTokenContext(doc, new Position(0, 22))).toBeNull();
     });
 
+    it('rejects typo --var( (var preceded by invalid chars)', () => {
+      // User typed `--var(` by mistake (stray `--` before `var(`).
+      // Previously this would fire with empty prefix and produce
+      // `--var(--wa-color-brand)` on completion.
+      const doc = createMockDocument([':root { --wa-xxx: --var()}']);
+      // cursor between ( and )
+      expect(detectTokenContext(doc, new Position(0, 24))).toBeNull();
+    });
+
+    it('rejects var( preceded by word character', () => {
+      // e.g. `myvar(` or `avar(` — not a valid CSS var() call
+      const doc = createMockDocument(['foo: myvar()']);
+      expect(detectTokenContext(doc, new Position(0, 11))).toBeNull();
+    });
+
     it('rejects plain CSS value', () => {
       const doc = createMockDocument(['display: flex;']);
       expect(detectTokenContext(doc, new Position(0, 13))).toBeNull();

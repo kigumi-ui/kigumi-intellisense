@@ -41,11 +41,18 @@ export class TokenCompletionProvider implements vscode.CompletionItemProvider {
       // in var(...). Inside var(...) we only insert the token name.
       item.insertText = wrapInVar ? `var(${entry.name})` : entry.name;
 
-      // Replace the partial prefix the user has typed so far.
-      if (prefix.length > 0) {
-        const startChar = position.character - prefix.length;
-        item.range = new vscode.Range(position.line, startChar, position.line, position.character);
-      }
+      // Always set an explicit range so VS Code never falls back to its
+      // language-default "word at cursor" logic. With an empty prefix the
+      // range is zero-length at the cursor (pure insertion); with a
+      // non-empty prefix it covers exactly the characters the user has
+      // typed so far.
+      const startChar = position.character - prefix.length;
+      item.range = new vscode.Range(
+        position.line,
+        startChar,
+        position.line,
+        position.character
+      );
 
       return item;
     });

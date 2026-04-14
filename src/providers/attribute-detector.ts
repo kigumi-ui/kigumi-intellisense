@@ -148,9 +148,17 @@ export function detectTokenContext(
   const textBeforeCursor = lineText.slice(0, charPos);
 
   // 1. Inside var(...) — captures any prefix of --wa-* (including empty).
+  //    The `(?:^|[\s,(:'"`])` prefix ensures we only match `var(` at a
+  //    valid starting position: start of line, or preceded by whitespace
+  //    / `,` / `(` / `:` / a string delimiter (so JSX / Vue / tagged
+  //    templates like `'var(...'` still work). This prevents false
+  //    positives like `--var(` where the user typed an extra `--` by
+  //    mistake (without this guard, the completion would insert INSIDE
+  //    the `()` and leave the stray `--` untouched, producing
+  //    `--var(--wa-color-brand)`).
   //    `[^()]*` stops at nested parens so `var(var(--wa-` still picks the
   //    innermost var().
-  const varMatch = /var\(\s*([^()]*)$/.exec(textBeforeCursor);
+  const varMatch = /(?:^|[\s,(:'"`])var\(\s*([^()]*)$/.exec(textBeforeCursor);
   if (varMatch && isTokenPrefix(varMatch[1])) {
     return { prefix: varMatch[1], wrapInVar: false };
   }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7
+
+### Fixed
+
+- Token completion no longer fires on invalid `var(` positions (e.g. a stray `--var(` from a typo), which previously caused results like `--var(--wa-color-brand)` on selection. `var(` now only matches at the start of a line or after whitespace, `,`, `(`, `:`, or a string delimiter.
+- Completion items now always set an explicit replacement range, so a zero-length prefix inserts cleanly at the cursor without VS Code's default word-range logic accidentally stripping or preserving nearby characters.
+
 ## 0.1.6
 
 ### Added
